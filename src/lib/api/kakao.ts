@@ -96,59 +96,73 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * 최대 100개 가져온 후 랜덤 30개 선택
+ * 다양한 거리의 음식점을 가져오기 위해 여러 반경에서 검색
+ * (Kakao API는 최대 45개만 페이지네이션 가능)
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
   radius?: number;
   category?: CategoryFilter;
 }): Promise<Restaurant[]> => {
-  const { coords, radius = 2000, category = 'all' } = params;
+  const { coords, category = 'all' } = params;
 
-  const MAX_PAGES = 5; // 최대 5페이지 (75개)
-  const POOL_SIZE = 30; // 최종 풀 크기
+  const POOL_SIZE = 30;
 
-  // 카카오 로컬 API - 카테고리 검색
-  // FD6 = 음식점
-  const firstPage = await kakaoFetch<KakaoSearchResponse>(
-    '/v2/local/search/category.json',
-    {
-      category_group_code: 'FD6',
-      x: String(coords.lng),
-      y: String(coords.lat),
-      radius: String(radius),
-      sort: 'distance',
-      size: '15',
-      page: '1',
-    }
-  );
+  // 여러 반경에서 검색하여 다양한 거리의 음식점 확보
+  // 각 반경에서 최대 45개씩 가져올 수 있음
+  const radiusRanges = [400, 800, 1200, 1600]; // 도보 5분, 10분, 15분, 20분
 
-  let allPlaces = [...firstPage.documents];
+  const allPlaces: KakaoPlace[] = [];
+  const seenIds = new Set<string>();
 
-  // 추가 페이지 요청 (최대 5페이지까지)
-  const totalPages = Math.min(
-    MAX_PAGES,
-    Math.ceil(firstPage.meta.pageable_count / 15)
-  );
-
-  for (let page = 2; page <= totalPages; page++) {
-    if (firstPage.meta.is_end) break;
-
-    const nextPage = await kakaoFetch<KakaoSearchResponse>(
+  for (const searchRadius of radiusRanges) {
+    const response = await kakaoFetch<KakaoSearchResponse>(
       '/v2/local/search/category.json',
       {
         category_group_code: 'FD6',
         x: String(coords.lng),
         y: String(coords.lat),
-        radius: String(radius),
+        radius: String(searchRadius),
         sort: 'distance',
         size: '15',
-        page: String(page),
+        page: '1',
       }
     );
-    allPlaces = [...allPlaces, ...nextPage.documents];
 
-    if (nextPage.meta.is_end) break;
+    // 중복 제거하며 추가
+    for (const place of response.documents) {
+      if (!seenIds.has(place.id)) {
+        seenIds.add(place.id);
+        allPlaces.push(place);
+      }
+    }
+
+    // 2, 3 페이지도 가져오기 (각 반경에서 최대 45개)
+    if (!response.meta.is_end && response.meta.pageable_count > 15) {
+      for (let page = 2; page <= 3; page++) {
+        const nextPage = await kakaoFetch<KakaoSearchResponse>(
+          '/v2/local/search/category.json',
+          {
+            category_group_code: 'FD6',
+            x: String(coords.lng),
+            y: String(coords.lat),
+            radius: String(searchRadius),
+            sort: 'distance',
+            size: '15',
+            page: String(page),
+          }
+        );
+
+        for (const place of nextPage.documents) {
+          if (!seenIds.has(place.id)) {
+            seenIds.add(place.id);
+            allPlaces.push(place);
+          }
+        }
+
+        if (nextPage.meta.is_end) break;
+      }
+    }
   }
 
   // Restaurant 타입으로 변환
