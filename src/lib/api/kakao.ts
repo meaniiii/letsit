@@ -97,7 +97,7 @@ const filterByCategory = (
 /**
  * 주변 음식점 검색
  * 다양한 거리의 음식점을 가져오기 위해 여러 반경에서 검색
- * (Kakao API는 최대 45개만 페이지네이션 가능)
+ * sort 없이 요청하여 다양한 결과 확보
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
@@ -108,8 +108,7 @@ export const searchRestaurants = async (params: {
 
   const POOL_SIZE = 30;
 
-  // 여러 반경에서 검색하여 다양한 거리의 음식점 확보
-  // 각 반경에서 최대 45개씩 가져올 수 있음
+  // 여러 반경에서 각각 10개씩 검색 (sort 없이 = 다양한 결과)
   const radiusRanges = [400, 800, 1200, 1600]; // 도보 5분, 10분, 15분, 20분
 
   const allPlaces: KakaoPlace[] = [];
@@ -123,8 +122,7 @@ export const searchRestaurants = async (params: {
         x: String(coords.lng),
         y: String(coords.lat),
         radius: String(searchRadius),
-        sort: 'distance',
-        size: '15',
+        size: '10', // 반경당 10개
         page: '1',
       }
     );
@@ -134,33 +132,6 @@ export const searchRestaurants = async (params: {
       if (!seenIds.has(place.id)) {
         seenIds.add(place.id);
         allPlaces.push(place);
-      }
-    }
-
-    // 2, 3 페이지도 가져오기 (각 반경에서 최대 45개)
-    if (!response.meta.is_end && response.meta.pageable_count > 15) {
-      for (let page = 2; page <= 3; page++) {
-        const nextPage = await kakaoFetch<KakaoSearchResponse>(
-          '/v2/local/search/category.json',
-          {
-            category_group_code: 'FD6',
-            x: String(coords.lng),
-            y: String(coords.lat),
-            radius: String(searchRadius),
-            sort: 'distance',
-            size: '15',
-            page: String(page),
-          }
-        );
-
-        for (const place of nextPage.documents) {
-          if (!seenIds.has(place.id)) {
-            seenIds.add(place.id);
-            allPlaces.push(place);
-          }
-        }
-
-        if (nextPage.meta.is_end) break;
       }
     }
   }
