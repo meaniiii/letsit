@@ -96,7 +96,7 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * 1500m 반경에서 최대한 가져온 후 랜덤 30개 선택
+ * 카테고리 검색 + 키워드 검색 조합으로 더 많은 식당 확보
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
@@ -108,10 +108,10 @@ export const searchRestaurants = async (params: {
   const POOL_SIZE = 30;
   const RADIUS = 1500;
 
-  // 1500m 반경에서 3페이지 (최대 45개) 가져오기
   const allPlaces: KakaoPlace[] = [];
   const seenIds = new Set<string>();
 
+  // 1. 카테고리 검색 (FD6: 음식점) - 45개
   for (let page = 1; page <= 3; page++) {
     const response = await kakaoFetch<KakaoSearchResponse>(
       '/v2/local/search/category.json',
@@ -127,6 +127,31 @@ export const searchRestaurants = async (params: {
 
     for (const place of response.documents) {
       if (!seenIds.has(place.id)) {
+        seenIds.add(place.id);
+        allPlaces.push(place);
+      }
+    }
+  }
+
+  // 2. 키워드 검색으로 추가 식당 확보
+  const keywords = ['맛집', '식당', '밥집', '점심', '보쌈', '치킨', '국밥'];
+
+  for (const keyword of keywords) {
+    const response = await kakaoFetch<KakaoSearchResponse>(
+      '/v2/local/search/keyword.json',
+      {
+        query: keyword,
+        x: String(coords.lng),
+        y: String(coords.lat),
+        radius: String(RADIUS),
+        size: '15',
+        page: '1',
+      }
+    );
+
+    for (const place of response.documents) {
+      // 음식점 카테고리만 추가
+      if (place.category_name.startsWith('음식점') && !seenIds.has(place.id)) {
         seenIds.add(place.id);
         allPlaces.push(place);
       }
