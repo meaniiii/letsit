@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRestaurantStore } from '@/stores/restaurantStore';
-import { CategoryFilter } from '@/types';
+import { CategoryFilter, MoodType } from '@/types';
 
 export const useRestaurants = () => {
   const router = useRouter();
@@ -26,7 +26,7 @@ export const useRestaurants = () => {
 
   // 맛집 풀 로드
   const loadPool = useCallback(
-    async (newCategory?: CategoryFilter, keyword?: string) => {
+    async (newCategory?: CategoryFilter, mood?: MoodType) => {
       if (!coords) {
         setPoolError('위치 정보가 필요합니다');
         return;
@@ -42,8 +42,8 @@ export const useRestaurants = () => {
 
       try {
         let url = `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`;
-        if (keyword) {
-          url += `&keyword=${encodeURIComponent(keyword)}`;
+        if (mood) {
+          url += `&mood=${mood}`;
         }
         const res = await fetch(url);
 

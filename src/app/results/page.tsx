@@ -8,12 +8,12 @@ import {
   CategoryFilter,
 } from '@/components/features/restaurant';
 import { useLocation, useRestaurants } from '@/hooks';
-import { Restaurant } from '@/types';
+import { Restaurant, MoodType, MOOD_LABELS } from '@/types';
 
 function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const keyword = searchParams.get('keyword') || '';
+  const mood = (searchParams.get('mood') as MoodType) || undefined;
 
   const { coords } = useLocation();
   const {
@@ -36,8 +36,8 @@ function ResultsContent() {
       router.replace('/');
       return;
     }
-    loadPool(undefined, keyword);
-  }, [coords, router, loadPool, keyword]);
+    loadPool(undefined, mood);
+  }, [coords, router, loadPool, mood]);
 
   const handleCardClick = (restaurant: Restaurant) => {
     // 상세 페이지로 이동 (restaurant ID를 쿼리 파라미터로)
@@ -50,6 +50,13 @@ function ResultsContent() {
     } else {
       resetAndRecommend();
     }
+  };
+
+  const getHeaderTitle = () => {
+    if (mood && MOOD_LABELS[mood]) {
+      return `${MOOD_LABELS[mood]} 추천`;
+    }
+    return '오늘의 추천';
   };
 
   return (
@@ -65,7 +72,7 @@ function ResultsContent() {
             ←
           </button>
           <h1 className="text-xl font-bold text-gray-900">
-            {keyword ? `"${keyword}" 검색 결과` : '추천 결과'}
+            {getHeaderTitle()}
           </h1>
         </div>
       </header>

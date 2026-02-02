@@ -95,3 +95,31 @@ export const CATEGORY_KEYWORDS: Record<CategoryFilter, string[]> = {
   snack: ['분식', '떡볶이', '김밥', '라면'],
   cafe: ['카페', '커피', '디저트', '베이커리'],
 };
+
+// 기분 타입
+export type MoodType =
+  | 'hearty'
+  | 'light'
+  | 'spicy'
+  | 'cool'
+  | 'warm'
+  | 'rich';
+
+export const MOOD_LABELS: Record<MoodType, string> = {
+  hearty: '든든하게',
+  light: '가볍게',
+  spicy: '매콤하게',
+  cool: '시원하게',
+  warm: '따뜻하게',
+  rich: '느끼하게',
+};
+
+// 기분별 검색 키워드 (Kakao 키워드 검색용)
+export const MOOD_KEYWORDS: Record<MoodType, string[]> = {
+  hearty: ['삼겹살', '갈비', '제육', '국밥', '설렁탕', '찌개', '백반', '쌈밥', '보쌈'],
+  light: ['칼국수', '국수', '쌀국수', '김밥', '샌드위치', '샐러드', '죽', '우동'],
+  spicy: ['떡볶이', '마라탕', '닭발', '찜닭', '불닭', '육개장', '짬뽕'],
+  cool: ['냉면', '밀면', '물회', '회', '초밥', '콩국수', '냉모밀'],
+  warm: ['라멘', '우동', '수제비', '칼국수', '국밥', '순두부'],
+  rich: ['치킨', '피자', '파스타', '돈까스', '햄버거', '탕수육'],
+};

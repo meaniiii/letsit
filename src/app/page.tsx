@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { useLocation } from '@/hooks';
 import { useRestaurantStore } from '@/stores/restaurantStore';
+import { MoodType, MOOD_LABELS } from '@/types';
+
+const MOODS: MoodType[] = ['hearty', 'light', 'spicy', 'cool', 'warm', 'rich'];
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,7 +18,7 @@ export default function HomePage() {
   const [addressInput, setAddressInput] = useState('');
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
-  const [keyword, setKeyword] = useState('');
+  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
 
   useEffect(() => {
     requestLocation();
@@ -24,8 +27,8 @@ export default function HomePage() {
   const handleClick = () => {
     if (coords) {
       const params = new URLSearchParams();
-      if (keyword.trim()) {
-        params.set('keyword', keyword.trim());
+      if (selectedMood) {
+        params.set('mood', selectedMood);
       }
       const query = params.toString();
       router.push(query ? `/results?${query}` : '/results');
@@ -73,6 +76,10 @@ export default function HomePage() {
     }
   };
 
+  const handleMoodClick = (mood: MoodType) => {
+    setSelectedMood(selectedMood === mood ? null : mood);
+  };
+
   const isReady = coords && !isLoading && !addressLoading;
 
   return (
@@ -100,7 +107,7 @@ export default function HomePage() {
 
             {/* 위치 옵션 버튼들 */}
             {!isLoading && (
-              <div className="flex gap-4 mb-12">
+              <div className="flex gap-4 mb-8">
                 <button
                   onClick={requestLocation}
                   className="text-sm text-gray-400 hover:text-gray-600"
@@ -119,7 +126,7 @@ export default function HomePage() {
           </>
         ) : (
           /* 주소 입력 모드 */
-          <div className="w-full max-w-sm mb-12">
+          <div className="w-full max-w-sm mb-8">
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
@@ -153,15 +160,26 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 키워드 입력 (선택) */}
+        {/* 기분 선택 */}
         <div className="w-full max-w-sm mb-6">
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="먹고 싶은 음식? (예: 보쌈, 치킨, 국밥)"
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:border-orange-500"
-          />
+          <p className="text-sm text-gray-500 text-center mb-3">
+            오늘 기분이 어때? (선택)
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {MOODS.map((mood) => (
+              <button
+                key={mood}
+                onClick={() => handleMoodClick(mood)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  selectedMood === mood
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {MOOD_LABELS[mood]}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 메인 CTA */}
@@ -171,7 +189,7 @@ export default function HomePage() {
           disabled={!isReady}
           fullWidth
         >
-          {keyword.trim() ? `${keyword.trim()} 먹으러 가자!` : '오늘 뭐 먹지?'}
+          {selectedMood ? `${MOOD_LABELS[selectedMood]} 먹으러 가자!` : '오늘 뭐 먹지?'}
         </Button>
 
         <p className="text-sm text-gray-400 mt-4">

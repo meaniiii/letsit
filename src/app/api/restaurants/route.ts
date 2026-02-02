@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSearchParams } from '@/lib/validators';
 import { searchRestaurants } from '@/lib/api/kakao';
-import { CategoryFilter, RestaurantsResponse, ErrorResponse } from '@/types';
+import { CategoryFilter, MoodType, RestaurantsResponse, ErrorResponse } from '@/types';
 
 export async function GET(
   request: NextRequest
@@ -15,7 +15,7 @@ export async function GET(
       lng: searchParams.get('lng'),
       radius: searchParams.get('radius') || '2000',
       category: searchParams.get('category') || 'all',
-      keyword: searchParams.get('keyword') || '',
+      mood: searchParams.get('mood') || '',
     };
 
     // 검증
@@ -32,7 +32,7 @@ export async function GET(
       coords: { lat: validation.data.lat, lng: validation.data.lng },
       radius: validation.data.radius,
       category: (params.category as CategoryFilter) || 'all',
-      keyword: params.keyword || undefined,
+      mood: (params.mood as MoodType) || undefined,
     });
 
     // 응답

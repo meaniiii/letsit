@@ -5,6 +5,8 @@ import {
   Coordinates,
   CATEGORY_KEYWORDS,
   CategoryFilter,
+  MoodType,
+  MOOD_KEYWORDS,
 } from '@/types';
 import {
   calculateWalkingTime,
@@ -96,16 +98,16 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * - 키워드가 있으면: 키워드 검색 (사용자가 원하는 음식)
- * - 키워드가 없으면: 카테고리 검색 (일반 음식점)
+ * - 기분(mood)이 있으면: 해당 기분의 키워드들로 검색
+ * - 기분이 없으면: 카테고리 검색 (완전 랜덤)
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
   radius?: number;
   category?: CategoryFilter;
-  keyword?: string;
+  mood?: MoodType;
 }): Promise<Restaurant[]> => {
-  const { coords, category = 'all', keyword } = params;
+  const { coords, category = 'all', mood } = params;
 
   const POOL_SIZE = 30;
   const RADIUS = 1500;
@@ -113,9 +115,11 @@ export const searchRestaurants = async (params: {
   const allPlaces: KakaoPlace[] = [];
   const seenIds = new Set<string>();
 
-  if (keyword) {
-    // 키워드 검색 (사용자 입력)
-    for (let page = 1; page <= 3; page++) {
+  if (mood) {
+    // 기분 기반 키워드 검색
+    const keywords = MOOD_KEYWORDS[mood];
+
+    for (const keyword of keywords) {
       const response = await kakaoFetch<KakaoSearchResponse>(
         '/v2/local/search/keyword.json',
         {
@@ -124,7 +128,7 @@ export const searchRestaurants = async (params: {
           y: String(coords.lat),
           radius: String(RADIUS),
           size: '15',
-          page: String(page),
+          page: '1',
         }
       );
 
@@ -137,7 +141,7 @@ export const searchRestaurants = async (params: {
       }
     }
   } else {
-    // 카테고리 검색 (FD6: 음식점)
+    // 카테고리 검색 (FD6: 음식점) - 완전 랜덤
     for (let page = 1; page <= 3; page++) {
       const response = await kakaoFetch<KakaoSearchResponse>(
         '/v2/local/search/category.json',
