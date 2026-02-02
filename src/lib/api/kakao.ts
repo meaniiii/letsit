@@ -95,7 +95,7 @@ export const searchRestaurants = async (params: {
   radius?: number;
   category?: CategoryFilter;
 }): Promise<Restaurant[]> => {
-  const { coords, radius = 1000, category = 'all' } = params;
+  const { coords, radius = 2000, category = 'all' } = params;
 
   // 카카오 로컬 API - 카테고리 검색
   // FD6 = 음식점
@@ -134,8 +134,8 @@ export const searchRestaurants = async (params: {
   // Restaurant 타입으로 변환
   let restaurants = allPlaces.map(transformToRestaurant);
 
-  // 도보 10분 이내 필터링
-  restaurants = restaurants.filter((r) => r.walkingTime <= 10);
+  // 도보 20분 이내 필터링
+  restaurants = restaurants.filter((r) => r.walkingTime <= 20);
 
   // 카테고리 필터 적용
   if (category !== 'all') {

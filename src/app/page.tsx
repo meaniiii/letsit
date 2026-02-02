@@ -154,7 +154,7 @@ export default function HomePage() {
         </Button>
 
         <p className="text-sm text-gray-400 mt-4">
-          10분 안에 갈 수 있는 맛집 추천
+          20분 안에 갈 수 있는 맛집 추천
         </p>
       </div>
     </div>

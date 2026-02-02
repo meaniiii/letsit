@@ -13,7 +13,7 @@ export async function GET(
     const params = {
       lat: searchParams.get('lat'),
       lng: searchParams.get('lng'),
-      radius: searchParams.get('radius') || '1000',
+      radius: searchParams.get('radius') || '2000',
       category: searchParams.get('category') || 'all',
     };
 

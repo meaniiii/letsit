@@ -8,7 +8,7 @@ export const coordinatesSchema = z.object({
 export const searchParamsSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
-  radius: z.coerce.number().min(100).max(2000).default(1000),
+  radius: z.coerce.number().min(100).max(3000).default(2000),
   category: z.string().optional(),
 });
 
