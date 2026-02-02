@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCoordsFromAddress } from '@/lib/api/kakao';
+import { isServiceAvailable, incrementApiCount } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
+  // 서비스 사용 가능 여부 확인
+  const available = await isServiceAvailable();
+  if (!available) {
+    return NextResponse.json(
+      { error: '일일 사용량이 소진되었습니다', code: 'RATE_LIMIT_EXCEEDED' },
+      { status: 429 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
 
@@ -14,6 +24,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await getCoordsFromAddress(address);
+
+    // API 호출 횟수 기록
+    await incrementApiCount(1);
 
     if (!result) {
       return NextResponse.json(

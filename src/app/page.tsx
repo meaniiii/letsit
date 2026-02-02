@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
-import { useLocation } from '@/hooks';
+import { useLocation, useServiceStatus } from '@/hooks';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 
 export default function HomePage() {
   const router = useRouter();
   const { coords, address, isLoading, error, requestLocation } = useLocation();
   const { setCoords, setAddress } = useRestaurantStore();
+  const { isChecking } = useServiceStatus();
 
   const [showAddressInput, setShowAddressInput] = useState(false);
   const [addressInput, setAddressInput] = useState('');
@@ -42,6 +43,10 @@ export default function HomePage() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 429) {
+          router.replace('/unavailable');
+          return;
+        }
         setAddressError(data.error || '주소 검색에 실패했습니다');
         return;
       }
@@ -63,7 +68,19 @@ export default function HomePage() {
     }
   };
 
-  const isReady = coords && !isLoading && !addressLoading;
+  const isReady = coords && !isLoading && !addressLoading && !isChecking;
+
+  // 서비스 상태 확인 중
+  if (isChecking) {
+    return (
+      <div className="flex flex-col min-h-screen px-6 py-12">
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Letsit</h1>
+          <p className="text-gray-400">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen px-6 py-12">
