@@ -96,11 +96,7 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * 반경별 + 페이지 조합으로 다양한 거리의 음식점 확보
- * - 400m page 1: 가장 가까운 곳 (도보 ~5분)
- * - 800m page 2: 중간 거리 (도보 ~10분)
- * - 1200m page 3: 먼 거리 (도보 ~15분)
- * - 1600m page 3: 가장 먼 거리 (도보 ~20분)
+ * 1500m 반경에서 최대한 가져온 후 랜덤 30개 선택
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
@@ -110,33 +106,25 @@ export const searchRestaurants = async (params: {
   const { coords, category = 'all' } = params;
 
   const POOL_SIZE = 30;
+  const RADIUS = 1500;
 
-  // 반경 + 페이지 조합 (거리 순 정렬 시 다른 거리대 확보)
-  const searchConfigs = [
-    { radius: 400, page: 1 }, // 0~400m 중 가까운 곳
-    { radius: 800, page: 2 }, // 400~800m 근처
-    { radius: 1200, page: 3 }, // 800~1200m 근처
-    { radius: 1600, page: 3 }, // 1200~1600m 근처
-  ];
-
+  // 1500m 반경에서 3페이지 (최대 45개) 가져오기
   const allPlaces: KakaoPlace[] = [];
   const seenIds = new Set<string>();
 
-  for (const config of searchConfigs) {
+  for (let page = 1; page <= 3; page++) {
     const response = await kakaoFetch<KakaoSearchResponse>(
       '/v2/local/search/category.json',
       {
         category_group_code: 'FD6',
         x: String(coords.lng),
         y: String(coords.lat),
-        radius: String(config.radius),
-        sort: 'distance',
+        radius: String(RADIUS),
         size: '15',
-        page: String(config.page),
+        page: String(page),
       }
     );
 
-    // 중복 제거하며 추가
     for (const place of response.documents) {
       if (!seenIds.has(place.id)) {
         seenIds.add(place.id);
@@ -166,7 +154,7 @@ export const searchRestaurants = async (params: {
     restaurants = filterByCategory(restaurants, category);
   }
 
-  // 랜덤으로 30개 선택 (풀이 30개 미만이면 전체 반환)
+  // 랜덤으로 30개 선택
   if (restaurants.length > POOL_SIZE) {
     restaurants = getRandomItems(restaurants, POOL_SIZE);
   }
