@@ -143,6 +143,16 @@ export const searchRestaurants = async (params: {
   // 도보 20분 이내 필터링
   restaurants = restaurants.filter((r) => r.walkingTime <= 20);
 
+  // 제외할 카테고리 (간식, 아이스크림 등)
+  const excludeCategories = ['간식', '아이스크림', '빙수', '디저트'];
+  restaurants = restaurants.filter(
+    (r) =>
+      !excludeCategories.some(
+        (exc) =>
+          r.category.includes(exc) || r.categoryDetail.includes(exc)
+      )
+  );
+
   // 카테고리 필터 적용
   if (category !== 'all') {
     restaurants = filterByCategory(restaurants, category);
