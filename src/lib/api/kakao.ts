@@ -10,6 +10,7 @@ import {
   calculateWalkingTime,
   parseCategory,
   parseCategoryDetail,
+  getRandomItems,
 } from '@/lib/utils';
 
 const KAKAO_BASE_URL = 'https://dapi.kakao.com';
@@ -94,7 +95,8 @@ const filterByCategory = (
 };
 
 /**
- * 주변 음식점 검색 (최대 30개)
+ * 주변 음식점 검색
+ * 최대 100개 가져온 후 랜덤 30개 선택
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
@@ -103,9 +105,12 @@ export const searchRestaurants = async (params: {
 }): Promise<Restaurant[]> => {
   const { coords, radius = 2000, category = 'all' } = params;
 
+  const MAX_PAGES = 5; // 최대 5페이지 (75개)
+  const POOL_SIZE = 30; // 최종 풀 크기
+
   // 카카오 로컬 API - 카테고리 검색
   // FD6 = 음식점
-  const data = await kakaoFetch<KakaoSearchResponse>(
+  const firstPage = await kakaoFetch<KakaoSearchResponse>(
     '/v2/local/search/category.json',
     {
       category_group_code: 'FD6',
@@ -113,16 +118,23 @@ export const searchRestaurants = async (params: {
       y: String(coords.lat),
       radius: String(radius),
       sort: 'distance',
-      size: '15', // 한 페이지 최대 15개
+      size: '15',
       page: '1',
     }
   );
 
-  // 2페이지까지 요청해서 최대 30개 확보
-  let allPlaces = [...data.documents];
+  let allPlaces = [...firstPage.documents];
 
-  if (!data.meta.is_end && data.meta.pageable_count > 15) {
-    const page2 = await kakaoFetch<KakaoSearchResponse>(
+  // 추가 페이지 요청 (최대 5페이지까지)
+  const totalPages = Math.min(
+    MAX_PAGES,
+    Math.ceil(firstPage.meta.pageable_count / 15)
+  );
+
+  for (let page = 2; page <= totalPages; page++) {
+    if (firstPage.meta.is_end) break;
+
+    const nextPage = await kakaoFetch<KakaoSearchResponse>(
       '/v2/local/search/category.json',
       {
         category_group_code: 'FD6',
@@ -131,10 +143,12 @@ export const searchRestaurants = async (params: {
         radius: String(radius),
         sort: 'distance',
         size: '15',
-        page: '2',
+        page: String(page),
       }
     );
-    allPlaces = [...allPlaces, ...page2.documents];
+    allPlaces = [...allPlaces, ...nextPage.documents];
+
+    if (nextPage.meta.is_end) break;
   }
 
   // Restaurant 타입으로 변환
@@ -156,6 +170,11 @@ export const searchRestaurants = async (params: {
   // 카테고리 필터 적용
   if (category !== 'all') {
     restaurants = filterByCategory(restaurants, category);
+  }
+
+  // 랜덤으로 30개 선택 (풀이 30개 미만이면 전체 반환)
+  if (restaurants.length > POOL_SIZE) {
+    restaurants = getRandomItems(restaurants, POOL_SIZE);
   }
 
   return restaurants;
