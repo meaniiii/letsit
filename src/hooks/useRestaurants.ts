@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 import { CategoryFilter } from '@/types';
 
 export const useRestaurants = () => {
+  const router = useRouter();
   const {
     coords,
     pool,
@@ -42,6 +44,13 @@ export const useRestaurants = () => {
         const res = await fetch(
           `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`
         );
+
+        // Kakao API 한도 초과
+        if (res.status === 429) {
+          router.replace('/unavailable');
+          return;
+        }
+
         const data = await res.json();
 
         if (data.error) {

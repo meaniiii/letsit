@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
-import { useLocation, useServiceStatus } from '@/hooks';
+import { useLocation } from '@/hooks';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 
 export default function HomePage() {
   const router = useRouter();
   const { coords, address, isLoading, error, requestLocation } = useLocation();
   const { setCoords, setAddress } = useRestaurantStore();
-  const { isChecking } = useServiceStatus();
 
   const [showAddressInput, setShowAddressInput] = useState(false);
   const [addressInput, setAddressInput] = useState('');
@@ -68,19 +67,7 @@ export default function HomePage() {
     }
   };
 
-  const isReady = coords && !isLoading && !addressLoading && !isChecking;
-
-  // 서비스 상태 확인 중
-  if (isChecking) {
-    return (
-      <div className="flex flex-col min-h-screen px-6 py-12">
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Letsit</h1>
-          <p className="text-gray-400">로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
+  const isReady = coords && !isLoading && !addressLoading;
 
   return (
     <div className="flex flex-col min-h-screen px-6 py-12">

@@ -39,6 +39,12 @@ const kakaoFetch = async <T>(
   });
 
   if (!res.ok) {
+    // 429: 일일 할당량 초과
+    if (res.status === 429) {
+      const error = new Error('RATE_LIMIT_EXCEEDED');
+      error.name = 'RateLimitError';
+      throw error;
+    }
     throw new Error(`Kakao API Error: ${res.status}`);
   }
 
