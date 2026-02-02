@@ -47,10 +47,17 @@ export const formatDistance = (distanceM: number): string => {
 };
 
 /**
- * 배열에서 랜덤으로 n개 추출
+ * 배열에서 랜덤으로 n개 추출 (Fisher-Yates 셔플)
  */
 export const getRandomItems = <T>(array: T[], count: number): T[] => {
-  const shuffled = [...array].sort(() => Math.random() - 0.5);
+  const shuffled = [...array];
+
+  // Fisher-Yates 셔플
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
   return shuffled.slice(0, count);
 };
 
