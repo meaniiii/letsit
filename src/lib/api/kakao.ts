@@ -96,8 +96,7 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * 다양한 거리의 음식점을 가져오기 위해 여러 반경에서 검색
- * sort 없이 요청하여 다양한 결과 확보
+ * 1600m 반경에서 여러 페이지 검색 (sort 없이 = 다양한 거리)
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
@@ -107,33 +106,28 @@ export const searchRestaurants = async (params: {
   const { coords, category = 'all' } = params;
 
   const POOL_SIZE = 30;
-
-  // 여러 반경에서 각각 10개씩 검색 (sort 없이 = 다양한 결과)
-  const radiusRanges = [400, 800, 1200, 1600]; // 도보 5분, 10분, 15분, 20분
+  const SEARCH_RADIUS = 1600; // 도보 20분
+  const PAGES_TO_FETCH = 3; // 3페이지 = 최대 45개
 
   const allPlaces: KakaoPlace[] = [];
-  const seenIds = new Set<string>();
 
-  for (const searchRadius of radiusRanges) {
+  // 1600m 반경에서 3페이지 가져오기 (sort 없이 = 다양한 결과)
+  for (let page = 1; page <= PAGES_TO_FETCH; page++) {
     const response = await kakaoFetch<KakaoSearchResponse>(
       '/v2/local/search/category.json',
       {
         category_group_code: 'FD6',
         x: String(coords.lng),
         y: String(coords.lat),
-        radius: String(searchRadius),
-        size: '10', // 반경당 10개
-        page: '1',
+        radius: String(SEARCH_RADIUS),
+        size: '15',
+        page: String(page),
       }
     );
 
-    // 중복 제거하며 추가
-    for (const place of response.documents) {
-      if (!seenIds.has(place.id)) {
-        seenIds.add(place.id);
-        allPlaces.push(place);
-      }
-    }
+    allPlaces.push(...response.documents);
+
+    if (response.meta.is_end) break;
   }
 
   // Restaurant 타입으로 변환
