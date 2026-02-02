@@ -15,6 +15,7 @@ export async function GET(
       lng: searchParams.get('lng'),
       radius: searchParams.get('radius') || '2000',
       category: searchParams.get('category') || 'all',
+      keyword: searchParams.get('keyword') || '',
     };
 
     // 검증
@@ -31,6 +32,7 @@ export async function GET(
       coords: { lat: validation.data.lat, lng: validation.data.lng },
       radius: validation.data.radius,
       category: (params.category as CategoryFilter) || 'all',
+      keyword: params.keyword || undefined,
     });
 
     // 응답

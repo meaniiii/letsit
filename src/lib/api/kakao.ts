@@ -96,14 +96,16 @@ const filterByCategory = (
 
 /**
  * 주변 음식점 검색
- * 카테고리 검색 + 키워드 검색 조합으로 더 많은 식당 확보
+ * - 키워드가 있으면: 키워드 검색 (사용자가 원하는 음식)
+ * - 키워드가 없으면: 카테고리 검색 (일반 음식점)
  */
 export const searchRestaurants = async (params: {
   coords: Coordinates;
   radius?: number;
   category?: CategoryFilter;
+  keyword?: string;
 }): Promise<Restaurant[]> => {
-  const { coords, category = 'all' } = params;
+  const { coords, category = 'all', keyword } = params;
 
   const POOL_SIZE = 30;
   const RADIUS = 1500;
@@ -111,49 +113,49 @@ export const searchRestaurants = async (params: {
   const allPlaces: KakaoPlace[] = [];
   const seenIds = new Set<string>();
 
-  // 1. 카테고리 검색 (FD6: 음식점) - 45개
-  for (let page = 1; page <= 3; page++) {
-    const response = await kakaoFetch<KakaoSearchResponse>(
-      '/v2/local/search/category.json',
-      {
-        category_group_code: 'FD6',
-        x: String(coords.lng),
-        y: String(coords.lat),
-        radius: String(RADIUS),
-        size: '15',
-        page: String(page),
-      }
-    );
+  if (keyword) {
+    // 키워드 검색 (사용자 입력)
+    for (let page = 1; page <= 3; page++) {
+      const response = await kakaoFetch<KakaoSearchResponse>(
+        '/v2/local/search/keyword.json',
+        {
+          query: keyword,
+          x: String(coords.lng),
+          y: String(coords.lat),
+          radius: String(RADIUS),
+          size: '15',
+          page: String(page),
+        }
+      );
 
-    for (const place of response.documents) {
-      if (!seenIds.has(place.id)) {
-        seenIds.add(place.id);
-        allPlaces.push(place);
+      for (const place of response.documents) {
+        // 음식점 카테고리만 추가
+        if (place.category_name.startsWith('음식점') && !seenIds.has(place.id)) {
+          seenIds.add(place.id);
+          allPlaces.push(place);
+        }
       }
     }
-  }
+  } else {
+    // 카테고리 검색 (FD6: 음식점)
+    for (let page = 1; page <= 3; page++) {
+      const response = await kakaoFetch<KakaoSearchResponse>(
+        '/v2/local/search/category.json',
+        {
+          category_group_code: 'FD6',
+          x: String(coords.lng),
+          y: String(coords.lat),
+          radius: String(RADIUS),
+          size: '15',
+          page: String(page),
+        }
+      );
 
-  // 2. 키워드 검색으로 추가 식당 확보
-  const keywords = ['맛집', '식당', '밥집', '점심', '보쌈', '치킨', '국밥'];
-
-  for (const keyword of keywords) {
-    const response = await kakaoFetch<KakaoSearchResponse>(
-      '/v2/local/search/keyword.json',
-      {
-        query: keyword,
-        x: String(coords.lng),
-        y: String(coords.lat),
-        radius: String(RADIUS),
-        size: '15',
-        page: '1',
-      }
-    );
-
-    for (const place of response.documents) {
-      // 음식점 카테고리만 추가
-      if (place.category_name.startsWith('음식점') && !seenIds.has(place.id)) {
-        seenIds.add(place.id);
-        allPlaces.push(place);
+      for (const place of response.documents) {
+        if (!seenIds.has(place.id)) {
+          seenIds.add(place.id);
+          allPlaces.push(place);
+        }
       }
     }
   }

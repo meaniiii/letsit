@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui';
 import {
   RestaurantList,
@@ -10,8 +10,11 @@ import {
 import { useLocation, useRestaurants } from '@/hooks';
 import { Restaurant } from '@/types';
 
-export default function ResultsPage() {
+function ResultsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const keyword = searchParams.get('keyword') || '';
+
   const { coords } = useLocation();
   const {
     restaurants,
@@ -33,8 +36,8 @@ export default function ResultsPage() {
       router.replace('/');
       return;
     }
-    loadPool();
-  }, [coords, router, loadPool]);
+    loadPool(undefined, keyword);
+  }, [coords, router, loadPool, keyword]);
 
   const handleCardClick = (restaurant: Restaurant) => {
     // 상세 페이지로 이동 (restaurant ID를 쿼리 파라미터로)
@@ -61,7 +64,9 @@ export default function ResultsPage() {
           >
             ←
           </button>
-          <h1 className="text-xl font-bold text-gray-900">추천 결과</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            {keyword ? `"${keyword}" 검색 결과` : '추천 결과'}
+          </h1>
         </div>
       </header>
 
@@ -109,5 +114,13 @@ export default function ResultsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">로딩 중...</div>}>
+      <ResultsContent />
+    </Suspense>
   );
 }

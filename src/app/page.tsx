@@ -15,6 +15,7 @@ export default function HomePage() {
   const [addressInput, setAddressInput] = useState('');
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState('');
 
   useEffect(() => {
     requestLocation();
@@ -22,7 +23,12 @@ export default function HomePage() {
 
   const handleClick = () => {
     if (coords) {
-      router.push('/results');
+      const params = new URLSearchParams();
+      if (keyword.trim()) {
+        params.set('keyword', keyword.trim());
+      }
+      const query = params.toString();
+      router.push(query ? `/results?${query}` : '/results');
     }
   };
 
@@ -147,6 +153,17 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* 키워드 입력 (선택) */}
+        <div className="w-full max-w-sm mb-6">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="먹고 싶은 음식? (예: 보쌈, 치킨, 국밥)"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:border-orange-500"
+          />
+        </div>
+
         {/* 메인 CTA */}
         <Button
           size="lg"
@@ -154,7 +171,7 @@ export default function HomePage() {
           disabled={!isReady}
           fullWidth
         >
-          오늘 뭐 먹지?
+          {keyword.trim() ? `${keyword.trim()} 먹으러 가자!` : '오늘 뭐 먹지?'}
         </Button>
 
         <p className="text-sm text-gray-400 mt-4">

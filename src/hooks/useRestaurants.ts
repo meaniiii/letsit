@@ -26,7 +26,7 @@ export const useRestaurants = () => {
 
   // 맛집 풀 로드
   const loadPool = useCallback(
-    async (newCategory?: CategoryFilter) => {
+    async (newCategory?: CategoryFilter, keyword?: string) => {
       if (!coords) {
         setPoolError('위치 정보가 필요합니다');
         return;
@@ -41,9 +41,11 @@ export const useRestaurants = () => {
       }
 
       try {
-        const res = await fetch(
-          `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`
-        );
+        let url = `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`;
+        if (keyword) {
+          url += `&keyword=${encodeURIComponent(keyword)}`;
+        }
+        const res = await fetch(url);
 
         // Kakao API 한도 초과
         if (res.status === 429) {
