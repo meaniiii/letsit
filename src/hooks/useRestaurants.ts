@@ -1,0 +1,108 @@
+'use client';
+
+import { useCallback } from 'react';
+import { useRestaurantStore } from '@/stores/restaurantStore';
+import { CategoryFilter } from '@/types';
+
+export const useRestaurants = () => {
+  const {
+    coords,
+    pool,
+    currentList,
+    category,
+    poolLoading,
+    poolError,
+    shownIds,
+    setPool,
+    setCategory,
+    setPoolLoading,
+    setPoolError,
+    getNextRecommendations,
+    resetShownIds,
+    hasMoreRecommendations,
+  } = useRestaurantStore();
+
+  // 맛집 풀 로드
+  const loadPool = useCallback(
+    async (newCategory?: CategoryFilter) => {
+      if (!coords) {
+        setPoolError('위치 정보가 필요합니다');
+        return;
+      }
+
+      setPoolLoading(true);
+      setPoolError(null);
+
+      const categoryToUse = newCategory || category;
+      if (newCategory) {
+        setCategory(newCategory);
+      }
+
+      try {
+        const res = await fetch(
+          `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`
+        );
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setPool(data.data);
+
+        // 첫 5개 추천
+        getNextRecommendations();
+      } catch (error) {
+        setPoolError(
+          error instanceof Error
+            ? error.message
+            : '맛집을 불러오는 중 오류가 발생했습니다'
+        );
+      } finally {
+        setPoolLoading(false);
+      }
+    },
+    [
+      coords,
+      category,
+      setPool,
+      setCategory,
+      setPoolLoading,
+      setPoolError,
+      getNextRecommendations,
+    ]
+  );
+
+  // 다시 추천
+  const refreshRecommendations = useCallback(() => {
+    if (hasMoreRecommendations()) {
+      getNextRecommendations();
+      return true;
+    }
+    return false;
+  }, [getNextRecommendations, hasMoreRecommendations]);
+
+  // 처음부터 다시
+  const resetAndRecommend = useCallback(() => {
+    resetShownIds();
+    getNextRecommendations();
+  }, [resetShownIds, getNextRecommendations]);
+
+  return {
+    restaurants: currentList,
+    pool,
+    category,
+    isLoading: poolLoading,
+    error: poolError,
+    shownCount: shownIds.length,
+    poolSize: pool.length,
+    hasMore: hasMoreRecommendations(),
+    loadPool,
+    refreshRecommendations,
+    resetAndRecommend,
+    setCategory: (cat: CategoryFilter) => {
+      setCategory(cat);
+      loadPool(cat);
+    },
+  };
+};
