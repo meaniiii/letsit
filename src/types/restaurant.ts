@@ -43,6 +43,7 @@ export interface Restaurant {
     lat: number;
     lng: number;
   };
+  matchedKeyword?: string; // 기분 검색 시 매칭된 키워드
 }
 
 // 좌표 타입
@@ -100,26 +101,32 @@ export const CATEGORY_KEYWORDS: Record<CategoryFilter, string[]> = {
 export type MoodType =
   | 'hearty'
   | 'light'
+  | 'simple'
   | 'spicy'
   | 'cool'
   | 'warm'
-  | 'rich';
+  | 'rich'
+  | 'protein';
 
 export const MOOD_LABELS: Record<MoodType, string> = {
   hearty: '든든하게',
   light: '가볍게',
+  simple: '간단하게',
   spicy: '매콤하게',
   cool: '시원하게',
-  warm: '따뜻하게',
+  warm: '뜨끈하게',
   rich: '느끼하게',
+  protein: '힘나게',
 };
 
 // 기분별 검색 키워드 (Kakao 키워드 검색용)
 export const MOOD_KEYWORDS: Record<MoodType, string[]> = {
   hearty: ['삼겹살', '갈비', '제육', '국밥', '설렁탕', '찌개', '백반', '쌈밥', '보쌈'],
-  light: ['칼국수', '국수', '쌀국수', '김밥', '샌드위치', '샐러드', '죽', '우동'],
+  light: ['샐러드', '포케', '닭가슴살', '곤약', '두부', '저칼로리'],
+  simple: ['김밥', '국수', '우동', '쌀국수', '토스트', '샌드위치', '칼국수'],
   spicy: ['떡볶이', '마라탕', '닭발', '찜닭', '불닭', '육개장', '짬뽕'],
   cool: ['냉면', '밀면', '물회', '회', '초밥', '콩국수', '냉모밀'],
   warm: ['라멘', '우동', '수제비', '칼국수', '국밥', '순두부'],
-  rich: ['치킨', '피자', '파스타', '돈까스', '햄버거', '탕수육'],
+  rich: ['스테이크', '파스타', '돈카츠', '함박', '오므라이스', '피자'],
+  protein: ['불고기', '닭갈비', '소고기덮밥', '연어덮밥', '참치덮밥', '수육', '육회', '치킨', '돼지불백', '고기국수', '보쌈', '삼겹살'],
 };

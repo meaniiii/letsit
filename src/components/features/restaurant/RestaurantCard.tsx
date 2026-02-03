@@ -39,6 +39,12 @@ const RestaurantCard = ({ restaurant, onClick }: RestaurantCardProps) => {
 
       <p className="text-sm text-gray-500 truncate">{restaurant.address}</p>
 
+      {restaurant.matchedKeyword && (
+        <p className="text-xs text-orange-500 mt-2">
+          🔍 &quot;{restaurant.matchedKeyword}&quot;으로 찾음
+        </p>
+      )}
+
       <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <span>{formatDistance(restaurant.distance)}</span>

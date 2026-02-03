@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCoordsFromAddress } from '@/lib/api/kakao';
+import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
+  // Rate Limit 체크
+  const clientIP = getClientIP(request);
+  const rateLimit = checkRateLimit(clientIP);
+
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+      { status: 429 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
 

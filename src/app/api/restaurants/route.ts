@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSearchParams } from '@/lib/validators';
+import { validateSearchParams, validateMoods } from '@/lib/validators';
 import { searchRestaurants } from '@/lib/api/kakao';
-import { CategoryFilter, MoodType, RestaurantsResponse, ErrorResponse } from '@/types';
+import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
+import { CategoryFilter, RestaurantsResponse, ErrorResponse } from '@/types';
 
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<RestaurantsResponse | ErrorResponse>> {
   try {
+    // Rate Limit 체크
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(clientIP);
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+          code: 'RATE_LIMIT_EXCEEDED',
+          status: 429,
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimit.resetTime),
+          },
+        }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
 
     // 파라미터 추출
@@ -15,7 +37,7 @@ export async function GET(
       lng: searchParams.get('lng'),
       radius: searchParams.get('radius') || '2000',
       category: searchParams.get('category') || 'all',
-      mood: searchParams.get('mood') || '',
+      moods: searchParams.get('moods') || '',
     };
 
     // 검증
@@ -27,12 +49,15 @@ export async function GET(
       );
     }
 
+    // moods 파라미터 검증 (화이트리스트 기반)
+    const moods = validateMoods(searchParams.get('moods'));
+
     // 맛집 검색
     const restaurants = await searchRestaurants({
       coords: { lat: validation.data.lat, lng: validation.data.lng },
       radius: validation.data.radius,
       category: (params.category as CategoryFilter) || 'all',
-      mood: (params.mood as MoodType) || undefined,
+      moods: moods.length > 0 ? moods : undefined,
     });
 
     // 응답

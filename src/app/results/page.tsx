@@ -13,7 +13,8 @@ import { Restaurant, MoodType, MOOD_LABELS } from '@/types';
 function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const mood = (searchParams.get('mood') as MoodType) || undefined;
+  const moodsParam = searchParams.get('moods');
+  const moods = moodsParam ? (moodsParam.split(',') as MoodType[]) : [];
 
   const { coords } = useLocation();
   const {
@@ -36,8 +37,8 @@ function ResultsContent() {
       router.replace('/');
       return;
     }
-    loadPool(undefined, mood);
-  }, [coords, router, loadPool, mood]);
+    loadPool(undefined, moods.length > 0 ? moods : undefined);
+  }, [coords, router, loadPool, moods.join(',')]);
 
   const handleCardClick = (restaurant: Restaurant) => {
     // 상세 페이지로 이동 (restaurant ID를 쿼리 파라미터로)
@@ -53,8 +54,8 @@ function ResultsContent() {
   };
 
   const getHeaderTitle = () => {
-    if (mood && MOOD_LABELS[mood]) {
-      return `${MOOD_LABELS[mood]} 추천`;
+    if (moods.length > 0) {
+      return `${moods.map((m) => MOOD_LABELS[m]).join(' + ')} 추천`;
     }
     return '오늘의 추천';
   };

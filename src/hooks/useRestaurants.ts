@@ -26,7 +26,7 @@ export const useRestaurants = () => {
 
   // 맛집 풀 로드
   const loadPool = useCallback(
-    async (newCategory?: CategoryFilter, mood?: MoodType) => {
+    async (newCategory?: CategoryFilter, moods?: MoodType[]) => {
       if (!coords) {
         setPoolError('위치 정보가 필요합니다');
         return;
@@ -42,8 +42,8 @@ export const useRestaurants = () => {
 
       try {
         let url = `/api/restaurants?lat=${coords.lat}&lng=${coords.lng}&category=${categoryToUse}`;
-        if (mood) {
-          url += `&mood=${mood}`;
+        if (moods && moods.length > 0) {
+          url += `&moods=${moods.join(',')}`;
         }
         const res = await fetch(url);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateCoordinates } from '@/lib/validators';
 import { getAddressFromCoords } from '@/lib/api/kakao';
+import { checkRateLimit, getClientIP } from '@/lib/rateLimit';
 import { ErrorResponse } from '@/types';
 
 interface LocationResponse {
@@ -11,6 +12,21 @@ export async function GET(
   request: NextRequest
 ): Promise<NextResponse<LocationResponse | ErrorResponse>> {
   try {
+    // Rate Limit 체크
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(clientIP);
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+          code: 'RATE_LIMIT_EXCEEDED',
+          status: 429,
+        },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
 
     const lat = searchParams.get('lat');

@@ -11,6 +11,44 @@
 | **CONSTITUTION.md** (현재) | 공통 원칙 |
 | [CONSTITUTION.frontend.md](./CONSTITUTION.frontend.md) | 프론트엔드 원칙 |
 | [CONSTITUTION.backend.md](./CONSTITUTION.backend.md) | 백엔드 원칙 |
+| [CONSTITUTION.security.md](./CONSTITUTION.security.md) | 보안 아키텍트 가이드 |
+| [CONSTITUTION.qa.md](./CONSTITUTION.qa.md) | QA 에이전트 가이드 |
+| [SPEC.md](./SPEC.md) | 서비스 기획서 |
+
+---
+
+## 0. 개발 워크플로우
+
+### 0.1 기능 요청 처리 프로세스
+
+새로운 기능 요청이나 변경 요청 시 다음 순서를 따른다:
+
+```
+[1] 요청 접수
+       ↓
+[2] 방향성 논의 (사용자와 상의)
+       ↓
+[3] SPEC.md 업데이트 (기획 반영)
+       ↓
+[4] 개발 진행
+       ↓
+[5] QA 테스트 (필요 시)
+```
+
+### 0.2 SPEC-First 원칙
+
+- **기획 우선:** 코드 작성 전에 SPEC.md에 기능 명세를 먼저 문서화
+- **동기화 유지:** 구현 완료 후 SPEC.md와 실제 코드가 일치하는지 확인
+- **변경 이력:** SPEC.md의 `Last updated` 날짜를 항상 최신으로 유지
+
+### 0.3 방향성 논의가 필요한 경우
+
+| 상황 | 필요한 논의 |
+|------|-------------|
+| 새로운 기능 추가 | 기능 범위, 우선순위, UI/UX 방향 |
+| 기존 기능 변경 | 변경 영향 범위, 호환성 |
+| 기술적 선택 | API 설계, 데이터 구조, 라이브러리 선택 |
+| 트레이드오프 | 성능 vs 유지보수성, 단순함 vs 확장성 |
 
 ---
 
@@ -161,4 +199,4 @@ KAKAO_REST_API_KEY=...
 
 ---
 
-*Last updated: 2026-01-30*
+*Last updated: 2026-02-02*

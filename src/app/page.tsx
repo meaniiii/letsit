@@ -7,7 +7,7 @@ import { useLocation } from '@/hooks';
 import { useRestaurantStore } from '@/stores/restaurantStore';
 import { MoodType, MOOD_LABELS } from '@/types';
 
-const MOODS: MoodType[] = ['hearty', 'light', 'spicy', 'cool', 'warm', 'rich'];
+const MOODS: MoodType[] = ['hearty', 'light', 'simple', 'spicy', 'cool', 'warm', 'rich', 'protein'];
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function HomePage() {
   const [addressInput, setAddressInput] = useState('');
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
-  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
+  const [selectedMoods, setSelectedMoods] = useState<MoodType[]>([]);
 
   useEffect(() => {
     requestLocation();
@@ -27,8 +27,8 @@ export default function HomePage() {
   const handleClick = () => {
     if (coords) {
       const params = new URLSearchParams();
-      if (selectedMood) {
-        params.set('mood', selectedMood);
+      if (selectedMoods.length > 0) {
+        params.set('moods', selectedMoods.join(','));
       }
       const query = params.toString();
       router.push(query ? `/results?${query}` : '/results');
@@ -77,7 +77,9 @@ export default function HomePage() {
   };
 
   const handleMoodClick = (mood: MoodType) => {
-    setSelectedMood(selectedMood === mood ? null : mood);
+    setSelectedMoods((prev) =>
+      prev.includes(mood) ? prev.filter((m) => m !== mood) : [...prev, mood]
+    );
   };
 
   const isReady = coords && !isLoading && !addressLoading;
@@ -171,7 +173,7 @@ export default function HomePage() {
                 key={mood}
                 onClick={() => handleMoodClick(mood)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedMood === mood
+                  selectedMoods.includes(mood)
                     ? 'bg-orange-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
@@ -180,6 +182,9 @@ export default function HomePage() {
               </button>
             ))}
           </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            복수 선택 가능
+          </p>
         </div>
 
         {/* 메인 CTA */}
@@ -189,7 +194,9 @@ export default function HomePage() {
           disabled={!isReady}
           fullWidth
         >
-          {selectedMood ? `${MOOD_LABELS[selectedMood]} 먹으러 가자!` : '오늘 뭐 먹지?'}
+          {selectedMoods.length > 0
+            ? `${selectedMoods.map((m) => MOOD_LABELS[m]).join(' + ')} 먹으러 가자!`
+            : '오늘 뭐 먹지?'}
         </Button>
 
         <p className="text-sm text-gray-400 mt-4">

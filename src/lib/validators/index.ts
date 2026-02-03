@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { MoodType } from '@/types';
+
+// 허용된 mood 값 (화이트리스트)
+const VALID_MOODS: MoodType[] = ['hearty', 'light', 'simple', 'spicy', 'cool', 'warm', 'rich', 'protein'];
 
 export const coordinatesSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
@@ -34,4 +38,23 @@ export const validateSearchParams = (
     return { success: true, data: result.data };
   }
   return { success: false, error: '유효하지 않은 검색 파라미터입니다' };
+};
+
+/**
+ * moods 파라미터 검증 (화이트리스트 기반)
+ * 유효하지 않은 mood 값은 필터링하여 반환
+ */
+export const validateMoods = (moodsParam: string | null): MoodType[] => {
+  if (!moodsParam) {
+    return [];
+  }
+
+  const requestedMoods = moodsParam.split(',');
+
+  // 화이트리스트에 있는 값만 필터링
+  const validMoods = requestedMoods.filter(
+    (mood): mood is MoodType => VALID_MOODS.includes(mood as MoodType)
+  );
+
+  return validMoods;
 };

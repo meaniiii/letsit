@@ -57,7 +57,10 @@ const kakaoFetch = async <T>(
 /**
  * 카카오 Place → Restaurant 변환
  */
-const transformToRestaurant = (place: KakaoPlace): Restaurant => {
+const transformToRestaurant = (
+  place: KakaoPlace,
+  matchedKeyword?: string
+): Restaurant => {
   const distance = parseInt(place.distance, 10);
   return {
     id: place.id,
@@ -73,6 +76,7 @@ const transformToRestaurant = (place: KakaoPlace): Restaurant => {
       lat: parseFloat(place.y),
       lng: parseFloat(place.x),
     },
+    matchedKeyword,
   };
 };
 
@@ -105,21 +109,25 @@ export const searchRestaurants = async (params: {
   coords: Coordinates;
   radius?: number;
   category?: CategoryFilter;
-  mood?: MoodType;
+  moods?: MoodType[];
 }): Promise<Restaurant[]> => {
-  const { coords, category = 'all', mood } = params;
+  const { coords, category = 'all', moods } = params;
 
   const POOL_SIZE = 30;
   const RADIUS = 1500;
 
+  // place ID -> matched keyword 매핑
+  const placeKeywordMap = new Map<string, string>();
   const allPlaces: KakaoPlace[] = [];
   const seenIds = new Set<string>();
 
-  if (mood) {
-    // 기분 기반 키워드 검색
-    const keywords = MOOD_KEYWORDS[mood];
+  if (moods && moods.length > 0) {
+    // 기분 기반 키워드 검색 (다중 기분의 키워드 합집합)
+    const keywords = moods.flatMap((mood) => MOOD_KEYWORDS[mood]);
+    // 중복 제거
+    const uniqueKeywords = [...new Set(keywords)];
 
-    for (const keyword of keywords) {
+    for (const keyword of uniqueKeywords) {
       const response = await kakaoFetch<KakaoSearchResponse>(
         '/v2/local/search/keyword.json',
         {
@@ -137,6 +145,7 @@ export const searchRestaurants = async (params: {
         if (place.category_name.startsWith('음식점') && !seenIds.has(place.id)) {
           seenIds.add(place.id);
           allPlaces.push(place);
+          placeKeywordMap.set(place.id, keyword); // 매칭된 키워드 저장
         }
       }
     }
@@ -164,8 +173,10 @@ export const searchRestaurants = async (params: {
     }
   }
 
-  // Restaurant 타입으로 변환
-  let restaurants = allPlaces.map(transformToRestaurant);
+  // Restaurant 타입으로 변환 (매칭된 키워드 포함)
+  let restaurants = allPlaces.map((place) =>
+    transformToRestaurant(place, placeKeywordMap.get(place.id))
+  );
 
   // 도보 20분 이내 필터링
   restaurants = restaurants.filter((r) => r.walkingTime <= 20);
@@ -189,6 +200,9 @@ export const searchRestaurants = async (params: {
   if (restaurants.length > POOL_SIZE) {
     restaurants = getRandomItems(restaurants, POOL_SIZE);
   }
+
+  // 거리순 정렬
+  restaurants.sort((a, b) => a.distance - b.distance);
 
   return restaurants;
 };
