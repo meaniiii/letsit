@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist } from 'next/font/google';
+import { GoogleTagManager } from '@next/third-parties/google';
 import './globals.css';
 
 const geist = Geist({
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geist.variable} font-sans antialiased bg-gray-50`}>
+        <GoogleTagManager gtmId="GTM-MQ5CSB3H" />
         <main className="min-h-screen max-w-md mx-auto bg-white">
           {children}
         </main>
