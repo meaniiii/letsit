@@ -1,9 +1,12 @@
 /**
  * 거리(m)를 도보 시간(분)으로 변환
- * 평균 도보 속도: 80m/분
+ * - 보정 계수 1.4 적용 (도시 환경에서 실제 도보 거리 ≈ 직선거리 × 1.4)
+ * - 평균 도보 속도: 80m/분
  */
 export const calculateWalkingTime = (distanceM: number): number => {
-  return Math.ceil(distanceM / 80);
+  const DETOUR_FACTOR = 1.4; // 우회 보정 계수
+  const WALKING_SPEED = 80; // m/분
+  return Math.ceil((distanceM * DETOUR_FACTOR) / WALKING_SPEED);
 };
 
 /**
